@@ -11,8 +11,10 @@ jobs:
       uses: actions/checkout@v7
       with:
         ref: main
-    - name: Build
+    - name: Create zip archive
       run: zip -r bimdots_archicad_connection.zip bimdots_archicad_connection
+    - name: Create package zip archive
+      run: zip bimdots_archicad_connection_package.zip bimdots_archicad_connection.zip
     - name: Get version
       id: get_version
       run: |
@@ -20,7 +22,7 @@ jobs:
     - name: Create release
       uses: ncipollo/release-action@v1
       with:
-        artifacts: bimdots_archicad_connection.zip
+        artifacts: "*.zip"
         commit: ${{ github.sha }}
         tag: v${{ steps.get_version.outputs.version }}
         token: ${{ secrets.GITHUB_TOKEN }}
