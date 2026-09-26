@@ -1,0 +1,26 @@
+name: Release
+
+on:
+  workflow_dispatch:
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v7
+      with:
+        ref: main
+    - name: Build
+      run: zip -r bimdots_archicad_connection.zip bimdots_archicad_connection
+    - name: Get version
+      id: get_version
+      run: |
+        echo "version=$(sed -n -E 's/.*"version": *\(([0-9]+, *[0-9]+, *[0-9]+)\).*/\1/p' bimdots_archicad_connection/__init__.py | tr -d ' ' | tr ',' '.')" >> $GITHUB_OUTPUT
+    - name: Create release
+      uses: ncipollo/release-action@v1
+      with:
+        artifacts: bimdots_archicad_connection.zip
+        commit: ${{ github.sha }}
+        tag: v${{ steps.get_version.outputs.version }}
+        token: ${{ secrets.GITHUB_TOKEN }}
