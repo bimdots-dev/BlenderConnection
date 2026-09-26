@@ -2,7 +2,7 @@ bl_info = {
     "id": "bimdots_archicad_connection",
     "name": "Bimdots Archicad Connection",
     "author": "Bimdots",
-    "version": (1, 5, 0),
+    "version": (1, 6, 0),
     "blender": (5, 0, 0),
     "description": "Bimdots Archicad Connection",
     "category": "Import-Export",
