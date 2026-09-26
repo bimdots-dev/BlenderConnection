@@ -1,2 +1,3 @@
-# BlenderBimdotsConnection
-Blender Add-On for Bimdots connection.
+# BlenderConnection
+
+This is the Blender Add-On code for Bimdots Blender Connection.
