@@ -153,7 +153,7 @@ def get_existing_light (name):
     if light_obj is not None and light_obj.data == light:
         return light_obj, light_obj.data
     if light_obj is not None:
-        utils.delete_object (light_obj)
+        object_utils.delete_object (light_obj)
         return None, None
     return None, None
 

@@ -1,5 +1,6 @@
 import os
 from http_client import send_request_with_headers
+from payloads import unique_name, make_triangle_mesh, make_update_meshes_payload
 
 def test_http_post_get_objects (base_url):
     url = f"{base_url}/update-meshes"
@@ -61,4 +62,38 @@ def test_http_post_get_objects (base_url):
             "id": "MyElementID",
             "checksum": "MyElementChecksum"
         }
+    ]
+
+def test_http_post_get_objects_unknown_model (base_url):
+    response = send_request_with_headers (
+        "POST",
+        f"{base_url}/get-objects",
+        payload = { "model_name": unique_name ("UnknownModel") }
+    )
+    assert response.status_code == 200
+    assert response.json () == { "objects": [] }
+
+def test_http_post_get_objects_multiple_objects (base_url):
+    model_name = unique_name ("GetMultipleObjectsTestModel")
+    create_response = send_request_with_headers (
+        "POST",
+        f"{base_url}/update-meshes",
+        payload = make_update_meshes_payload (model_name, [
+            make_triangle_mesh ("ID1", checksum = "Checksum1"),
+            make_triangle_mesh ("ID2", checksum = "Checksum2", location = (2, 0, 0))
+        ])
+    )
+    assert create_response.status_code == 200
+    assert create_response.json ().get ("meshes_created") == 2
+
+    response = send_request_with_headers (
+        "POST",
+        f"{base_url}/get-objects",
+        payload = { "model_name": model_name }
+    )
+    assert response.status_code == 200
+    objects = sorted (response.json ().get ("objects"), key = lambda obj: obj["id"])
+    assert objects == [
+        { "id": "ID1", "checksum": "Checksum1" },
+        { "id": "ID2", "checksum": "Checksum2" }
     ]
