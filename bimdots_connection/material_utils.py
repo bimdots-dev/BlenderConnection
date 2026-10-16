@@ -14,7 +14,7 @@ class MaterialAccessor:
         scene = bpy.context.scene
         if scene is None:
             return None
-        mappings = getattr (scene, "archicad_material_mappings", None)
+        mappings = getattr (scene, "bimdots_material_mappings", None)
         if mappings is None:
             return None
         for mapping in mappings:

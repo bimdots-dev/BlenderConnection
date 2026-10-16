@@ -3,12 +3,12 @@ import bpy
 from . import utils
 from . import server_state
 
-class OBJECT_PT_archicad_status_panel (bpy.types.Panel):
-    bl_label = "Archicad Connection Status"
-    bl_idname = "OBJECT_PT_archicad_status_panel"
+class OBJECT_PT_bimdots_status_panel (bpy.types.Panel):
+    bl_label = "Bimdots Connection Status"
+    bl_idname = "OBJECT_PT_bimdots_status_panel"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    bl_category = 'Archicad'
+    bl_category = 'Bimdots'
 
     def draw (self, context):
         status_text = "Running" if server_state.server is not None else "Not running"
@@ -19,7 +19,7 @@ class OBJECT_PT_archicad_status_panel (bpy.types.Panel):
         col.label (text = f"Version: {utils.get_addon_version (server_state.bl_info)}", icon = 'INFO_LARGE')
 
 classes = (
-    OBJECT_PT_archicad_status_panel,
+    OBJECT_PT_bimdots_status_panel,
 )
 
 def register ():
