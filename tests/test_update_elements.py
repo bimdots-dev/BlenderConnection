@@ -1,6 +1,7 @@
+import pytest
 import os
 from http_client import send_request_with_headers
-from payloads import unique_name, make_material, make_triangle_mesh, make_quad_mesh, make_update_meshes_payload
+from payloads import unique_name, make_material, make_triangle_mesh, make_quad_mesh, make_mesh_with_faces, make_update_meshes_payload
 
 def test_http_post_update_meshes (base_url):
     url = f"{base_url}/update-meshes"
@@ -244,6 +245,56 @@ def test_http_post_update_meshes_invalid_mesh_does_not_block_others (base_url):
         make_triangle_mesh ("ValidID1", checksum = "Checksum1"),
         invalid_mesh,
         make_triangle_mesh ("ValidID2", checksum = "Checksum2")
+    ]))
+    assert body.get ("meshes_created") == 2
+    assert get_objects (base_url, model_name) == [
+        { "id": "ValidID1", "checksum": "Checksum1" },
+        { "id": "ValidID2", "checksum": "Checksum2" }
+    ]
+
+@pytest.mark.parametrize ("faces", [
+    [[0, 1, 1, 2]],
+    [[0, 1, 2, 2]],
+    [[0, 1, 2, 0]],
+    [[0, 1, 0, 2]],
+    [[0, 0, 0]],
+    [[0, 1, 2], [0, 2, 2, 3]],
+    [[0, 1, 4]],
+    [[0, 1, -1]],
+    [[0, 1]],
+    [[]],
+    [[0, 1, 2], [2, 1, 0]]
+], ids = [
+    "repeated_consecutive_vertex",
+    "repeated_last_vertex",
+    "repeated_first_and_last_vertex",
+    "repeated_non_consecutive_vertex",
+    "all_vertices_same",
+    "invalid_second_face",
+    "vertex_index_out_of_range",
+    "negative_vertex_index",
+    "less_than_three_vertices",
+    "empty_face",
+    "duplicate_face"
+])
+def test_http_post_update_meshes_invalid_face (base_url, faces):
+    model_name = unique_name ("InvalidFaceTestModel")
+
+    body = update_meshes (base_url, make_update_meshes_payload (model_name, [
+        make_mesh_with_faces ("ID1", faces)
+    ]))
+    assert body.get ("meshes_created") == 0
+    assert body.get ("meshes_updated") == 0
+    assert get_objects (base_url, model_name) == []
+
+def test_http_post_update_meshes_invalid_face_does_not_block_others (base_url):
+    model_name = unique_name ("PartialInvalidFaceTestModel")
+
+    body = update_meshes (base_url, make_update_meshes_payload (model_name, [
+        make_mesh_with_faces ("ValidID1", [[0, 1, 2, 3]], checksum = "Checksum1"),
+        make_mesh_with_faces ("InvalidID1", [[0, 1, 1, 2]]),
+        make_mesh_with_faces ("InvalidID2", [[0, 1, 7]]),
+        make_mesh_with_faces ("ValidID2", [[0, 1, 2], [0, 2, 3]], checksum = "Checksum2")
     ]))
     assert body.get ("meshes_created") == 2
     assert get_objects (base_url, model_name) == [

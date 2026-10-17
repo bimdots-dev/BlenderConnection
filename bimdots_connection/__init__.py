@@ -2,7 +2,7 @@ bl_info = {
     "id": "bimdots_connection",
     "name": "Bimdots Connection",
     "author": "Bimdots",
-    "version": (2, 0, 0),
+    "version": (2, 1, 0),
     "blender": (5, 0, 0),
     "description": "Bimdots Connection",
     "category": "Import-Export",
@@ -59,6 +59,16 @@ def get_objects (data: dict) -> dict:
 
     return result
 
+def find_invalid_face (vertex_count, faces):
+    for face_index, face in enumerate (faces):
+        if len (face) < 3:
+            return f"face {face_index} has less than 3 vertices"
+        if not all (isinstance (v, int) and 0 <= v < vertex_count for v in face):
+            return f"face {face_index} has an out of range vertex index"
+        if len (set (face)) != len (face):
+            return f"face {face_index} has repeated vertices"
+    return None
+
 def update_meshes (data: dict) -> dict:
     result = {
         "materials_created": 0,
@@ -82,34 +92,47 @@ def update_meshes (data: dict) -> dict:
             object_utils.delete_object (existing_obj)
 
         name = mesh_data.get ("name")
-        mesh = bpy.data.meshes.new (name)
 
         vertices = mesh_data.get ("vertices")
         vertex_coords = [(vertices[i], vertices[i + 1], vertices[i + 2]) for i in range (0, len (vertices), 3)]
         faces = mesh_data.get ("faces")
-        mesh.from_pydata (vertex_coords, [], faces)
+        corner_count = sum (len (face) for face in faces)
 
         normals = mesh_data.get ("normals")
         normal_vectors = [(normals[i], normals[i + 1], normals[i + 2]) for i in range (0, len (normals), 3)]
-        if len (normal_vectors) != len (mesh.loops):
-            utils.write_log (f"Error: Number of normals ({len (normal_vectors)}) does not match number of loops ({len (mesh.loops)}).")
+        if len (normal_vectors) != corner_count:
+            utils.write_log (f"Error: Number of normals ({len (normal_vectors)}) does not match number of loops ({corner_count}).")
             continue
-        mesh.normals_split_custom_set (normal_vectors)
 
         uvs = mesh_data.get ("uvs")
         uv_vectors = [(uvs[i], uvs[i + 1]) for i in range (0, len (uvs), 2)]
-        if len (uv_vectors) != len (mesh.loops):
-            utils.write_log (f"Error: Number of UVs ({len (uv_vectors)}) does not match number of loops ({len (mesh.loops)}).")
+        if len (uv_vectors) != corner_count:
+            utils.write_log (f"Error: Number of UVs ({len (uv_vectors)}) does not match number of loops ({corner_count}).")
             continue
-        uv_layer = mesh.uv_layers.new (name = "UVMap")
-        for index, uv in enumerate (uv_vectors):
-            uv_layer.data[index].uv = uv
 
         face_materials = mesh_data.get ("face_materials")
         if len (face_materials) != len (faces):
             utils.write_log (f"Error: Number of face materials ({len (face_materials)}) does not match number of faces ({len (faces)}).")
             continue
-        
+
+        face_error = find_invalid_face (len (vertex_coords), faces)
+        if face_error is not None:
+            utils.write_log (f"Error: Mesh \"{name}\" has an invalid face ({face_error}), skipping it.")
+            continue
+
+        mesh = bpy.data.meshes.new (name)
+        mesh.from_pydata (vertex_coords, [], faces)
+        if mesh.validate ():
+            utils.write_log (f"Error: Mesh \"{name}\" has invalid geometry, skipping it.")
+            bpy.data.meshes.remove (mesh)
+            continue
+
+        mesh.normals_split_custom_set (normal_vectors)
+
+        uv_layer = mesh.uv_layers.new (name = "UVMap")
+        for index, uv in enumerate (uv_vectors):
+            uv_layer.data[index].uv = uv
+
         materialIndexMap: dict[int, int] = {}
         for i in range (0, len (face_materials)):
             material_index = face_materials[i]

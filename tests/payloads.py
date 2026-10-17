@@ -72,6 +72,25 @@ def make_quad_mesh (id, checksum = "checksum", face_materials = (0, 0)):
         "face_materials": list (face_materials)
     }
 
+def make_mesh_with_faces (id, faces, checksum = "checksum"):
+    corner_count = sum (len (face) for face in faces)
+    return {
+        "id": id,
+        "name": id,
+        "checksum": checksum,
+        "location": [0, 0, 0],
+        "vertices": [
+            0.0, 0.0, 0.0,
+            1.0, 0.0, 0.0,
+            1.0, 1.0, 0.0,
+            0.0, 1.0, 0.0
+        ],
+        "normals": [0.0, 0.0, 1.0] * corner_count,
+        "uvs": [0.0, 0.0] * corner_count,
+        "faces": faces,
+        "face_materials": [0] * len (faces)
+    }
+
 def make_update_meshes_payload (model_name, meshes, materials = None):
     return {
         "model_name": model_name,

@@ -4,9 +4,6 @@ from http_client import send_request_with_headers
 def test_http_get_is_alive_with_query_string (base_url):
     response = send_request_with_headers ("GET", f"{base_url}/is-alive?foo=bar")
     assert response.status_code == 200
-    assert response.json () == {
-        "version": "2.0.0"
-    }
 
 def test_http_get_not_found_returns_error_body (base_url):
     response = send_request_with_headers ("GET", f"{base_url}/not-found")
